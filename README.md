@@ -6,4 +6,4 @@ First use of neural network using two hidden layers of size four and using ReLU 
 
 ![alttext](images/classifying2dPointsTraining.png "training") ![alttext](images/classifying2dPointsTest.png "test")
 
-*Training data in and test data*
+*Training data and test data*
