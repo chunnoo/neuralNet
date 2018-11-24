@@ -16,16 +16,19 @@ class Matrix {
     std::vector<float> _data;
 
     std::uniform_real_distribution<float> _uniformDist{-1.0, 1.0};
+
   public:
+    static std::mt19937 rng;
+
     Matrix();
     Matrix(unsigned int height, unsigned int width);
     Matrix(const Matrix& m);
     Matrix(std::initializer_list< std::initializer_list<float> > initList);
     //~Matrix();
     void fill(float value);
-    void randomFill(std::mt19937& rng);
-    void randomFill(std::mt19937& rng, float low, float high);
-    void randomBinomialFill(std::mt19937& rng, float p);
+    void randomFill();
+    void randomFill(float low, float high);
+    void randomBinomialFill(float p);
     void set(unsigned int row, unsigned int col, float value);
     void set(unsigned int i, float value);
     float get(unsigned int row, unsigned int col) const;

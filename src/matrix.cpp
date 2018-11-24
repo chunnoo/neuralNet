@@ -36,19 +36,19 @@ void Matrix::fill(float value) {
   }
 }
 
-void Matrix::randomFill(std::mt19937& rng) {
+void Matrix::randomFill() {
   for (auto &e : _data) {
     e = _uniformDist(rng);
   }
 }
 
-void Matrix::randomFill(std::mt19937& rng, float low, float high) {
+void Matrix::randomFill(float low, float high) {
   for (auto &e : _data) {
     e = (_uniformDist(rng) + 1.0f)*0.5f*(high - low) + low;
   }
 }
 
-void Matrix::randomBinomialFill(std::mt19937& rng, float p) {
+void Matrix::randomBinomialFill(float p) {
   for (auto &e : _data) {
     if (_uniformDist(rng) < p*2 - 1) {
       e = 0.0;

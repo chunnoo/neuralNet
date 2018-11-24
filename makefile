@@ -9,10 +9,10 @@ SDIR=src
 
 LIBS=
 
-_DEPS = matrix.hpp
+_DEPS = matrix.hpp neuralNet.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = main.o matrix.o
+_OBJ = main.o matrix.o neuralNet.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 _TESTOBJ = test.o matrix.o
