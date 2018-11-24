@@ -1,0 +1,44 @@
+Matrix m(3, 3);
+m.fill(1.0);
+std::cout << m << std::endl;
+
+m.set(0, 0, 0);
+m.set(0, 1, 1);
+m.set(0, 2, 2);
+m.set(1, 0, 3);
+m.set(1, 1, 4);
+m.set(1, 2, 5);
+m.set(2, 0, 6);
+m.set(2, 1, 7);
+m.set(2, 2, 8);
+std::cout << m << std::endl;
+
+m.identity();
+std::cout << m << std::endl;
+
+Matrix a(2, 3);
+a.set(0, 0, 1);
+a.set(0, 1, 2);
+a.set(0, 2, 3);
+a.set(1, 0, 4);
+a.set(1, 1, 5);
+a.set(1, 2, 6);
+Matrix b(3, 2);
+b.set(0, 0, 6);
+b.set(1, 0, 5);
+b.set(2, 0, 4);
+b.set(0, 1, 3);
+b.set(1, 1, 2);
+b.set(2, 1, 1);
+Matrix c = a.multiply(b);
+std::cout << c << std::endl;
+
+float* d = m.getDataArray();
+d[2] = 5;
+std::cout << m << std::endl;
+
+std::cout << a << std::endl;
+a.transpose();
+std::cout << a << std::endl;
+a.transpose();
+std::cout << a << std::endl;

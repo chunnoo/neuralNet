@@ -1,0 +1,19 @@
+CC=g++-8
+CFLAGS=-std=c++17 -I. -isystem/usr/local/include -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wpedantic -Wconversion -Wsign-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion -Wformat=2
+DEPS =include/matrix.hpp
+OBJ =src/main.o src/matrix.o
+TESTOBJ =src/test.o src/matrix.o
+
+%.o: %.cpp $(DEPS)
+	$(CC) -c -o $@ $< `libpng-config --cflags` $(CFLAGS)
+
+main: $(OBJ)
+	$(CC) -o $@ $^ `libpng-config --ldflags` $(CFLAGS)
+
+test: $(TESTOBJ)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+.PHONY: clean
+
+clean:
+	rm -f src/*.o
