@@ -5,6 +5,7 @@
 #include <matrix.hpp>
 #include <stdexcept>
 #include <vector>
+#include <initializer_list>
 
 enum Activation {NONE, SIGMOID, RELU};
 
@@ -17,6 +18,7 @@ class NeuralNet {
 
   public:
     NeuralNet(std::vector<unsigned int> layerSizes, std::vector<Activation> layerActivations);
+    NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initializer_list<Activation> layerActivations);
 
     void backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint);
 

@@ -23,6 +23,35 @@ NeuralNet::NeuralNet(std::vector<unsigned int> layerSizes, std::vector<Activatio
   }
 }
 
+NeuralNet::NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initializer_list<Activation> layerActivations) : _numLayers(static_cast<unsigned int>(layerSizes.size())) {
+  if (layerSizes.size() == layerActivations.size() + 1) {
+    _activations.push_back(NONE);
+  } else if (layerSizes.size() != layerActivations.size()) {
+    throw std::invalid_argument("layerSizes and layerActivations does not match");
+  }
+
+  for (auto &e : layerActivations) {
+    _activations.push_back(e);
+  }
+
+  std::vector<unsigned int> layerSizesVec;
+  for (auto &e : layerSizes) {
+    layerSizesVec.push_back(e);
+  }
+
+  for (unsigned int i = 1; i < _numLayers; i++) {
+    Matrix layerWeight(layerSizesVec[i], layerSizesVec[i - 1]);
+    layerWeight.randomFill();
+
+    Matrix layerBias(layerSizesVec[i], 1);
+    layerBias.randomFill();
+
+    _ws.push_back(layerWeight);
+    _bs.push_back(layerBias);
+  }
+}
+
+
 void NeuralNet::backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint) {
   if (inputBatches.size() != outputBatches.size()) {
     throw std::invalid_argument("inputBatches and outputBatches does not match");
