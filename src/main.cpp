@@ -2,18 +2,65 @@
 #include <random>
 #include <ctime>
 #include <algorithm>
+#include <string>
 #include <png++/png.hpp>
 #include "matrix.hpp"
+#include "mnist.hpp"
 #include "neuralNet.hpp"
 
 std::mt19937 Matrix::rng(static_cast<unsigned int>(time(0)));
 
 int main() {
 
-  const unsigned int batchSize = 16;
-  const unsigned int trainingBatches = 16;
-  const float alpha = 0.001f;
-  const float dropoutRate = 0.0f;
+  Mnist trainData("train");
+  Mnist testData("t10k");
+
+  const unsigned int batchSize = 512;
+
+  std::vector<Matrix> trainLabelBatches = trainData.getLabelBatches(batchSize);
+  std::vector<Matrix> trainImageBatches = trainData.getImageBatches(batchSize);
+
+  std::vector<Matrix> testLabelBatches = testData.getLabelBatches(testData.getNumLabels());
+  std::vector<Matrix> testImageBatches = testData.getImageBatches(testData.getNumImages());
+
+  if (trainLabelBatches.size() != trainImageBatches.size() || testLabelBatches.size() != testImageBatches.size()) {
+    std::cout << "fuck" << std::endl;
+  }
+
+  const float alpha = 0.00001f;
+  const float dropoutRate = 0.2f;
+
+  NeuralNet nn({trainData.getImageHeight()*trainData.getImageWidth(), 256, 128, 128, 10}, {NONE, RELU, RELU, RELU, SIGMOID});
+  //NeuralNet nn("test");
+
+  nn.backPropagation(trainImageBatches, trainLabelBatches, alpha, dropoutRate, 1024, 16);
+
+  Matrix testOutput = nn.use(testImageBatches[0]);
+
+  std::cout << testOutput.getSample(10, 16) << std::endl;
+  std::cout << testLabelBatches[0].getSample(10, 16) << std::endl;
+
+  float testError = testOutput.subtract(testLabelBatches[0]).absAvg();
+
+  std::cout << testError << std::endl;
+
+  nn.save("test");
+
+  /*std::cout << labelBatches[1] << std::endl;
+
+  unsigned int imgHeight = trainMnist.getImageHeight();
+  unsigned int imgWidth = trainMnist.getImageWidth();
+  png::image<png::gray_pixel> mnistImage(imgWidth, imgHeight);
+
+  for (unsigned int i = 0; i < imgWidth; i++) {
+    for (unsigned int j = 0; j < imgHeight; j++) {
+      mnistImage[i][j] = png::gray_pixel(imageBatches[1].get(imgWidth*i + j, 0)*255);
+    }
+  }
+
+  mnistImage.write("images/mnistImage.png");*/
+
+  /*
 
   std::vector<Matrix> xs;
   std::vector<Matrix> ys;
@@ -27,10 +74,6 @@ int main() {
 
   png::image<png::rgb_pixel> imgX(imgWidth,imgHeight);
   png::image<png::rgb_pixel> imgY(imgWidth,imgHeight);
-
-  //std::vector<unsigned int> layerSizes{2, 4, 4, 2};
-  //std::vector<Activation> layerActivations{NONE, RELU, RELU, SIGMOID};
-  NeuralNet nn({2, 4, 4, 2}, {NONE, RELU, RELU, SIGMOID});
 
   //create training batches
   for (unsigned int i = 0; i < trainingBatches; i++) {
@@ -50,7 +93,9 @@ int main() {
     ys.push_back(y);
   }
 
-  nn.backPropagation(xs, ys, alpha, dropoutRate, 1024*64, 1024);
+
+
+  nn.printWeightsAndBiases();
 
   Matrix testY = nn.use(testX);
 
@@ -66,7 +111,7 @@ int main() {
   for (unsigned int i = 0; i < testSize; i++) {
     imgY[static_cast<unsigned int>((testX.get(0, i)*0.1f + 1)*static_cast<float>(imgWidth)*0.5f)][static_cast<unsigned int>((testX.get(1, i)*0.1f + 1)*static_cast<float>(imgHeight)*0.5f)] = png::rgb_pixel(static_cast<unsigned char>(testY.get(0,i)*255), static_cast<unsigned char>(testY.get(1,i)*255), 0);
   }
-  imgY.write("images/classifying2dPointsTest.png");
+  imgY.write("images/classifying2dPointsTest.png");*/
 
   return 0;
 }

@@ -59,6 +59,9 @@ void Matrix::randomBinomialFill(float p) {
 }
 
 void Matrix::set(unsigned int row, unsigned int col, float value) {
+  //if (row >= _height || col >= _width) {
+  //  throw std::invalid_argument("set called with illegal row and col");
+  //}
   _data[row*_width + col] = value;
 }
 
@@ -118,6 +121,8 @@ Matrix Matrix::multiply(const Matrix& b) const {
     throw std::invalid_argument("invalid matrix dimensions for multiplication");
   }
   Matrix c(_height, b.getWidth());
+  {
+  #pragma omp parallel for
   for (unsigned int i = 0; i < c.getHeight(); i++) {
     for (unsigned int j = 0; j < c.getWidth(); j++) {
       float v = 0;
@@ -126,6 +131,7 @@ Matrix Matrix::multiply(const Matrix& b) const {
       }
       c.set(i, j, v);
     }
+  }
   }
   return c;
 }

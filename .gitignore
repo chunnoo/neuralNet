@@ -2,3 +2,4 @@ mnist/
 obj/
 main
 test
+networks/

@@ -8,6 +8,7 @@
 #include <random>
 #include <cmath>
 #include <initializer_list>
+#include <omp.h>
 
 class Matrix {
   private:

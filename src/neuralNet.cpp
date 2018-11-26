@@ -1,10 +1,14 @@
-#include <neuralNet.hpp>
+#include "neuralNet.hpp"
 
 NeuralNet::NeuralNet(std::vector<unsigned int> layerSizes, std::vector<Activation> layerActivations) : _numLayers(static_cast<unsigned int>(layerSizes.size())) {
   if (layerSizes.size() == layerActivations.size() + 1) {
     _activations.push_back(NONE);
   } else if (layerSizes.size() != layerActivations.size()) {
     throw std::invalid_argument("layerSizes and layerActivations does not match");
+  }
+
+  for (auto &e : layerSizes) {
+    _layerSizes.push_back(e);
   }
 
   for (auto &e : layerActivations) {
@@ -21,6 +25,7 @@ NeuralNet::NeuralNet(std::vector<unsigned int> layerSizes, std::vector<Activatio
     _ws.push_back(layerWeight);
     _bs.push_back(layerBias);
   }
+  _bs[_numLayers - 2].fill(0);
 }
 
 NeuralNet::NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initializer_list<Activation> layerActivations) : _numLayers(static_cast<unsigned int>(layerSizes.size())) {
@@ -28,6 +33,10 @@ NeuralNet::NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initia
     _activations.push_back(NONE);
   } else if (layerSizes.size() != layerActivations.size()) {
     throw std::invalid_argument("layerSizes and layerActivations does not match");
+  }
+
+  for (auto &e : layerSizes) {
+    _layerSizes.push_back(e);
   }
 
   for (auto &e : layerActivations) {
@@ -49,8 +58,49 @@ NeuralNet::NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initia
     _ws.push_back(layerWeight);
     _bs.push_back(layerBias);
   }
+
+  _bs[_numLayers - 2].fill(0);
 }
 
+NeuralNet::NeuralNet(std::string filename) {
+  std::string fullFileName = "networks/" + filename;
+
+  std::ifstream file(fullFileName, std::ios::binary);
+
+  file.seekg(0, std::ios::beg);
+
+  file.read(reinterpret_cast<char *>(&_numLayers), sizeof(unsigned int));
+
+  for (unsigned int i = 0; i < _numLayers; i++) {
+    unsigned int e;
+    file.read(reinterpret_cast<char *>(&e), sizeof(unsigned int));
+    _layerSizes.push_back(e);
+  }
+
+  for (unsigned int i = 0; i < _numLayers; i++) {
+    Activation e;
+    file.read(reinterpret_cast<char *>(&e), sizeof(Activation));
+    _activations.push_back(e);
+  }
+
+  for (unsigned int i = 1; i < _numLayers; i++) {
+    Matrix m(_layerSizes[i], _layerSizes[i-1]);
+    for (auto &e : m.getDataVector()) {
+      file.read(reinterpret_cast<char *>(&e), sizeof(float));
+    }
+    _ws.push_back(m);
+  }
+
+  for (unsigned int i = 1; i < _numLayers; i++) {
+    Matrix m(_layerSizes[i], 1);
+    for (auto &e : m.getDataVector()) {
+      file.read(reinterpret_cast<char *>(&e), sizeof(float));
+    }
+    _bs.push_back(m);
+  }
+
+  file.close();
+}
 
 void NeuralNet::backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint) {
   if (inputBatches.size() != outputBatches.size()) {
@@ -72,7 +122,12 @@ void NeuralNet::backPropagation(std::vector<Matrix>& inputBatches, std::vector<M
         layer = layer.sigmoid();
       }
 
-      //do dropout here
+      if (j != _numLayers - 1) {
+        Matrix dropout(layer.getHeight(), layer.getWidth());
+        dropout.randomBinomialFill(dropoutRate);
+        dropout = dropout.multiply(1/(1 - dropoutRate));
+        layer = layer.elementMultiply(dropout);
+      }
 
       layers.push_back(layer);
     }
@@ -121,4 +176,48 @@ Matrix NeuralNet::use(Matrix& input) {
     }
   }
   return output;
+}
+
+void NeuralNet::printWeightsAndBiases() {
+  std::cout << "Weights" << std::endl;
+  for (auto &e : _ws) {
+    std::cout << e << std::endl;
+  }
+
+  std::cout << "Biases" << std::endl;
+  for (auto &e : _bs) {
+    std::cout << e << std::endl;
+  }
+}
+
+void NeuralNet::save(std::string filename) {
+  std::string fullFileName = "networks/" + filename;
+
+  std::ofstream file(fullFileName, std::ios::binary);
+
+  //file.seekg(0, std::ios::beg);
+
+  file.write(reinterpret_cast<char *>(&_numLayers), sizeof(unsigned int));
+
+  for (auto &e : _layerSizes) {
+    file.write(reinterpret_cast<char *>(&e), sizeof(unsigned int));
+  }
+
+  for (auto &e : _activations) {
+    file.write(reinterpret_cast<char *>(&e), sizeof(Activation));
+  }
+
+  for (auto &m : _ws) {
+    for (auto &e : m.getDataVector()) {
+      file.write(reinterpret_cast<char *>(&e), sizeof(float));
+    }
+  }
+
+  for (auto &m : _bs) {
+    for (auto &e : m.getDataVector()) {
+      file.write(reinterpret_cast<char *>(&e), sizeof(float));
+    }
+  }
+
+  file.close();
 }
