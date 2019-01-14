@@ -10,7 +10,7 @@ std::mt19937 Matrix::rng(static_cast<unsigned int>(time(0)));
 
 int main() {
 
-  const unsigned int batchSize = 16;
+  const unsigned int batchSize = 64;
   const unsigned int trainingBatches = 16;
   const float alpha = 0.001f;
   const float dropoutRate = 0.0f;
@@ -30,7 +30,7 @@ int main() {
 
   //std::vector<unsigned int> layerSizes{2, 4, 4, 2};
   //std::vector<Activation> layerActivations{NONE, RELU, RELU, SIGMOID};
-  NeuralNet nn({2, 4, 4, 2}, {NONE, RELU, RELU, SIGMOID});
+  NeuralNet nn({2, 4, 4, 2}, {NONE, RELU, RELU, SOFTMAX});
 
   //create training batches
   for (unsigned int i = 0; i < trainingBatches; i++) {
@@ -50,7 +50,7 @@ int main() {
     ys.push_back(y);
   }
 
-  nn.backPropagation(xs, ys, alpha, dropoutRate, 1024*64, 1024);
+  nn.backPropagation(xs, ys, CROSSENTROPY, alpha, dropoutRate, 1024*64, 1024);
 
   Matrix testY = nn.use(testX);
 

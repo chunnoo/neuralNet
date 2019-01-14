@@ -30,6 +30,8 @@ class Mnist {
 
     std::vector<Matrix> getLabelBatches(unsigned int batchSize);
     std::vector<Matrix> getImageBatches(unsigned int batchSize);
+    std::vector<Matrix> getLabelBatches(unsigned int batchSize, unsigned int numBatches);
+    std::vector<Matrix> getImageBatches(unsigned int batchSize, unsigned int numBatches);
 
 };
 

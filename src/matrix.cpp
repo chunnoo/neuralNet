@@ -230,6 +230,35 @@ Matrix Matrix::transpose() {
   }*/
 }
 
+Matrix Matrix::sumAlongRows() {
+  Matrix sumMat(_height, 1);
+
+  for (unsigned int i = 0; i < _height; i++) {
+    float rowSum = 0;
+    for (unsigned int j = 0; j < _width; j++) {
+      rowSum += get(i, j);
+    }
+    sumMat.set(i, 0, rowSum);
+  }
+  return sumMat;
+}
+
+Matrix Matrix::gpuMultiply(Matrix& b) {
+  Matrix c(_height, b.getWidth());
+
+  clops.multiply(*this, b, c);
+
+  return c;
+}
+
+Matrix Matrix::gpuMultiply(Matrix&& b) {
+  Matrix c(_height, b.getWidth());
+
+  clops.multiply(*this, b, c);
+
+  return c;
+}
+
 bool Matrix::equal(const Matrix& b) const {
   if (_width != b.getWidth() || _height !=  b.getHeight()) {
     return false;
@@ -283,6 +312,105 @@ Matrix Matrix::sigmoidInvDeriv() {
   return ret;
 }
 
+Matrix Matrix::softmax() {
+  Matrix ret(*this);
+
+  //using
+  //log(softmax(X, i)) = Xi - log(m + log(sum(exp(X - m))))
+  for (unsigned int i = 0; i < _width; i++) {
+    double max = static_cast<double>(get(0, i));
+    for (unsigned int j = 1; j < _height; j++) {
+      max = static_cast<double>(get(j, i)) > max ? static_cast<double>(get(j, i)) : max;
+    }
+    double expSum = 0;
+    for (unsigned int j = 0; j < _height; j++) {
+      expSum += exp(static_cast<double>(get(j, i)) - max);
+    }
+    for (unsigned int j = 0; j < _height; j++) {
+      ret.set(j, i, static_cast<float>(exp(static_cast<double>(get(j, i)) - max - log(expSum))));
+    }
+  }
+
+  //std::cout << *this << std::endl << ret << std::endl;
+
+  return ret;
+}
+
+Matrix Matrix::softmaxInvDeriv() {
+  Matrix ret(*this);
+
+  {
+    #pragma omp parallel for
+    for (unsigned int i = 0; i < _width; i++) {
+      for (unsigned int j = 0; j < _height; j++) {
+        float derivSum = 0;
+        for (unsigned int k = 0; k < _height; k++) {
+          derivSum += get(j, i)*((k == j ? 1 : 0) - get(k, i));
+        }
+        //derivsum = get(j,i)*(1 - get(j,i))
+        ret.set(j, i, derivSum);
+      }
+    }
+  }
+  return ret;
+}
+
+Matrix Matrix::meanSquared(Matrix& y) {
+  Matrix ret(*this);
+
+  for (unsigned int i = 0; i < _height; i++) {
+    float sum = 0;
+    for (unsigned int j = 0; j < _width; j++) {
+      sum += (get(i, j) - y.get(i, j))*(get(i, j) - y.get(i, j))/2;
+    }
+    ret.set(i, sum/static_cast<float>(_width));
+  }
+
+  //for (unsigned int i = 0; i < _width; i++) {
+  //  ret.set(i, (get(i) - y.get(i))*(get(i) - y.get(i))/2);
+  //}
+
+  return ret;
+}
+
+Matrix Matrix::meanSquaredDeriv(Matrix& y) {
+  Matrix ret(*this);
+
+  for (unsigned int i = 0; i < _height*_width; i++) {
+    ret.set(i, get(i) - y.get(i));
+  }
+
+  return ret;
+}
+
+Matrix Matrix::crossEntropy(Matrix& y) {
+  Matrix ret(*this);
+
+  for (unsigned int i = 0; i < _height; i++) {
+    float sum = 0;
+    for (unsigned int j = 0; j < _width; j++) {
+      sum += -y.get(i)*static_cast<float>(log(get(i)));
+    }
+    ret.set(i, sum);
+  }
+
+  //for (unsigned int i = 0; i < _height*_width; i++) {
+  //  ret.set(i, -y.get(i)*static_cast<float>(log(get(i))));
+  //}
+
+  return ret;
+}
+
+Matrix Matrix::crossEntropyDeriv(Matrix& y) {
+  Matrix ret(*this);
+
+  for (unsigned int i = 0; i < _height*_width; i++) {
+    ret.set(i, get(i) - y.get(i));
+  }
+
+  return ret;
+}
+
 float Matrix::absAvg() {
   float sum = 0;
 
@@ -291,6 +419,15 @@ float Matrix::absAvg() {
   }
 
   return sum/static_cast<float>(_width*_height);
+}
+
+void Matrix::roundPrint() {
+  for (unsigned int i = 0; i < _height; i++) {
+    for (unsigned int j = 0; j < _width; j++) {
+      printf("%4.2f ", static_cast<double>(get(i, j)));
+    }
+    printf("\n");
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, const Matrix& m) {

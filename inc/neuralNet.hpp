@@ -9,7 +9,8 @@
 #include <string>
 #include <initializer_list>
 
-enum Activation {NONE, SIGMOID, RELU};
+enum Activation {NONE, SIGMOID, RELU, SOFTMAX};
+enum Loss {MEANSQUARED, CROSSENTROPY};
 
 class NeuralNet {
   private:
@@ -24,7 +25,7 @@ class NeuralNet {
     NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initializer_list<Activation> layerActivations);
     NeuralNet(std::string filename);
 
-    void backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint);
+    void backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, Loss loss, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint);
 
     Matrix use(Matrix& input);
 

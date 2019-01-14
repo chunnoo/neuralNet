@@ -7,8 +7,12 @@
 #include <vector>
 #include <random>
 #include <cmath>
+#include <cstdio>
 #include <initializer_list>
 #include <omp.h>
+#include "clops.hpp"
+
+class Clops;
 
 class Matrix {
   private:
@@ -20,6 +24,7 @@ class Matrix {
 
   public:
     static std::mt19937 rng;
+    static Clops clops;
 
     Matrix();
     Matrix(unsigned int height, unsigned int width);
@@ -49,6 +54,10 @@ class Matrix {
     Matrix subtract(const Matrix& b) const;
     Matrix matVecAdd(const Matrix& v) const;
     Matrix transpose();
+    Matrix sumAlongRows();
+
+    Matrix gpuMultiply(Matrix& b);
+    Matrix gpuMultiply(Matrix&& b);
 
     bool equal(const Matrix& b) const;
 
@@ -56,8 +65,16 @@ class Matrix {
     Matrix reluInvDeriv();
     Matrix sigmoid();
     Matrix sigmoidInvDeriv();
+    Matrix softmax();
+    Matrix softmaxInvDeriv();
+
+    Matrix meanSquared(Matrix& y);
+    Matrix meanSquaredDeriv(Matrix& y);
+    Matrix crossEntropy(Matrix& y);
+    Matrix crossEntropyDeriv(Matrix& y);
 
     float absAvg();
+    void roundPrint();
 };
 
 std::ostream& operator<<(std::ostream& os, const Matrix& m);

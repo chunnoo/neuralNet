@@ -7,18 +7,20 @@
 #include "matrix.hpp"
 #include "mnist.hpp"
 #include "neuralNet.hpp"
+#include "clops.hpp"
 
 std::mt19937 Matrix::rng(static_cast<unsigned int>(time(0)));
+Clops Matrix::clops(1024*60000);
 
 int main() {
 
   Mnist trainData("train");
   Mnist testData("t10k");
 
-  const unsigned int batchSize = 512;
+  const unsigned int batchSize = 6000;//trainData.getNumLabels();
 
-  std::vector<Matrix> trainLabelBatches = trainData.getLabelBatches(batchSize);
-  std::vector<Matrix> trainImageBatches = trainData.getImageBatches(batchSize);
+  std::vector<Matrix> trainLabelBatches = trainData.getLabelBatches(batchSize, 1);
+  std::vector<Matrix> trainImageBatches = trainData.getImageBatches(batchSize, 1);
 
   std::vector<Matrix> testLabelBatches = testData.getLabelBatches(testData.getNumLabels());
   std::vector<Matrix> testImageBatches = testData.getImageBatches(testData.getNumImages());
@@ -28,23 +30,28 @@ int main() {
   }
 
   const float alpha = 0.00001f;
-  const float dropoutRate = 0.2f;
+  const float dropoutRate = 0.01f;
 
-  NeuralNet nn({trainData.getImageHeight()*trainData.getImageWidth(), 256, 128, 128, 10}, {NONE, RELU, RELU, RELU, SIGMOID});
+  NeuralNet nn({trainData.getImageHeight()*trainData.getImageWidth(), 256, 128, 128, 10}, {NONE, RELU, RELU, RELU, SOFTMAX});
   //NeuralNet nn("test");
 
-  nn.backPropagation(trainImageBatches, trainLabelBatches, alpha, dropoutRate, 1024, 16);
+  while (true) {
 
-  Matrix testOutput = nn.use(testImageBatches[0]);
+    nn.backPropagation(trainImageBatches, trainLabelBatches, CROSSENTROPY, alpha, dropoutRate, 16, 1);
 
-  std::cout << testOutput.getSample(10, 16) << std::endl;
-  std::cout << testLabelBatches[0].getSample(10, 16) << std::endl;
+    Matrix testOutput = nn.use(testImageBatches[0]);
 
-  float testError = testOutput.subtract(testLabelBatches[0]).absAvg();
+    testOutput.getSample(10, 16).roundPrint();
+    std::cout << std::endl;
+    testLabelBatches[0].getSample(10, 16).roundPrint();
 
-  std::cout << testError << std::endl;
+    float testError = testOutput.subtract(testLabelBatches[0]).absAvg();
 
-  nn.save("test");
+    std::cout << testError << std::endl;
+
+    nn.save("test");
+
+  }
 
   /*std::cout << labelBatches[1] << std::endl;
 
