@@ -3,11 +3,13 @@
 
 #include <iostream>
 #include <fstream>
-#include "matrix.hpp"
+#include "operations.hpp"
 #include <stdexcept>
 #include <vector>
 #include <string>
 #include <initializer_list>
+#include <Eigen/Dense>
+#include <cmath>
 
 enum Activation {NONE, SIGMOID, RELU, SOFTMAX};
 enum Loss {MEANSQUARED, CROSSENTROPY};
@@ -16,8 +18,8 @@ class NeuralNet {
   private:
     unsigned int _numLayers;
     std::vector<unsigned int> _layerSizes;
-    std::vector<Matrix> _ws;
-    std::vector<Matrix> _bs;
+    std::vector<Eigen::MatrixXf> _ws;
+    std::vector<Eigen::VectorXf> _bs;
     std::vector<Activation> _activations;
 
   public:
@@ -25,9 +27,9 @@ class NeuralNet {
     NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initializer_list<Activation> layerActivations);
     NeuralNet(std::string filename);
 
-    void backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, Loss loss, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint);
+    void backPropagation(std::vector<Eigen::MatrixXf>& inputBatches, std::vector<Eigen::MatrixXf>& outputBatches, Loss loss, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint);
 
-    Matrix use(Matrix& input);
+    Eigen::MatrixXf use(Eigen::MatrixXf& input);
 
     void printWeightsAndBiases();
 

@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <Eigen/Dense>
 
 class Mnist {
   private:
@@ -28,10 +29,10 @@ class Mnist {
     unsigned int getImageHeight();
     unsigned int getImageWidth();
 
-    std::vector<Matrix> getLabelBatches(unsigned int batchSize);
-    std::vector<Matrix> getImageBatches(unsigned int batchSize);
-    std::vector<Matrix> getLabelBatches(unsigned int batchSize, unsigned int numBatches);
-    std::vector<Matrix> getImageBatches(unsigned int batchSize, unsigned int numBatches);
+    std::vector<Eigen::MatrixXf> getLabelBatches(unsigned int batchSize);
+    std::vector<Eigen::MatrixXf> getImageBatches(unsigned int batchSize);
+    std::vector<Eigen::MatrixXf> getLabelBatches(unsigned int batchSize, unsigned int numBatches);
+    std::vector<Eigen::MatrixXf> getImageBatches(unsigned int batchSize, unsigned int numBatches);
 
 };
 

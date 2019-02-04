@@ -68,15 +68,15 @@ unsigned int Mnist::getImageWidth() {
   return static_cast<unsigned int>(_imageWidth);
 }
 
-std::vector<Matrix> Mnist::getLabelBatches(unsigned int batchSize) {
-  std::vector<Matrix> matrices;
+std::vector<Eigen::MatrixXf> Mnist::getLabelBatches(unsigned int batchSize) {
+  std::vector<Eigen::MatrixXf> matrices;
 
   for (unsigned int i = 0; i < static_cast<unsigned int>(_numLabels) / batchSize; i++) {
-    Matrix labelBatch(10, batchSize);
+    Eigen::MatrixXf labelBatch(10, batchSize);
     labelBatch.fill(0);
 
     for (unsigned int j = 0; j < batchSize; j++) {
-      labelBatch.set(static_cast<unsigned int>(_labelData[batchSize*i + j]), j, 1);
+      labelBatch(static_cast<unsigned int>(_labelData[batchSize*i + j]), j) = 1;
     }
 
     matrices.push_back(labelBatch);
@@ -85,15 +85,15 @@ std::vector<Matrix> Mnist::getLabelBatches(unsigned int batchSize) {
   return matrices;
 }
 
-std::vector<Matrix> Mnist::getLabelBatches(unsigned int batchSize, unsigned int numBatches) {
-  std::vector<Matrix> matrices;
+std::vector<Eigen::MatrixXf> Mnist::getLabelBatches(unsigned int batchSize, unsigned int numBatches) {
+  std::vector<Eigen::MatrixXf> matrices;
 
   for (unsigned int i = 0; i < numBatches; i++) {
-    Matrix labelBatch(10, batchSize);
+    Eigen::MatrixXf labelBatch(10, batchSize);
     labelBatch.fill(0);
 
     for (unsigned int j = 0; j < batchSize; j++) {
-      labelBatch.set(static_cast<unsigned int>(_labelData[batchSize*i + j]), j, 1);
+      labelBatch(static_cast<unsigned int>(_labelData[batchSize*i + j]), j) = 1;
     }
 
     matrices.push_back(labelBatch);
@@ -102,15 +102,15 @@ std::vector<Matrix> Mnist::getLabelBatches(unsigned int batchSize, unsigned int 
   return matrices;
 }
 
-std::vector<Matrix> Mnist::getImageBatches(unsigned int batchSize) {
-  std::vector<Matrix> matrices;
+std::vector<Eigen::MatrixXf> Mnist::getImageBatches(unsigned int batchSize) {
+  std::vector<Eigen::MatrixXf> matrices;
 
   for (unsigned int i = 0; i < static_cast<unsigned int>(_numImages) / batchSize; i++) {
-    Matrix imageBatch(static_cast<unsigned int>(_imageHeight*_imageWidth), batchSize);
+    Eigen::MatrixXf imageBatch(static_cast<unsigned int>(_imageHeight*_imageWidth), batchSize);
 
     for (unsigned int j = 0; j < batchSize; j++) {
       for (unsigned int k = 0; k < static_cast<unsigned int>(_imageHeight*_imageWidth); k++) {
-        imageBatch.set(k, j, static_cast<float>(_imageData[batchSize*static_cast<unsigned int>(_imageHeight*_imageWidth)*i + static_cast<unsigned int>(_imageHeight*_imageWidth)*j + k])/255);
+        imageBatch(k, j) =  static_cast<float>(_imageData[batchSize*static_cast<unsigned int>(_imageHeight*_imageWidth)*i + static_cast<unsigned int>(_imageHeight*_imageWidth)*j + k])/255;
       }
     }
 
@@ -120,15 +120,15 @@ std::vector<Matrix> Mnist::getImageBatches(unsigned int batchSize) {
   return matrices;
 }
 
-std::vector<Matrix> Mnist::getImageBatches(unsigned int batchSize, unsigned int numBatches) {
-  std::vector<Matrix> matrices;
+std::vector<Eigen::MatrixXf> Mnist::getImageBatches(unsigned int batchSize, unsigned int numBatches) {
+  std::vector<Eigen::MatrixXf> matrices;
 
   for (unsigned int i = 0; i < numBatches; i++) {
-    Matrix imageBatch(static_cast<unsigned int>(_imageHeight*_imageWidth), batchSize);
+    Eigen::MatrixXf imageBatch(static_cast<unsigned int>(_imageHeight*_imageWidth), batchSize);
 
     for (unsigned int j = 0; j < batchSize; j++) {
       for (unsigned int k = 0; k < static_cast<unsigned int>(_imageHeight*_imageWidth); k++) {
-        imageBatch.set(k, j, static_cast<float>(_imageData[batchSize*static_cast<unsigned int>(_imageHeight*_imageWidth)*i + static_cast<unsigned int>(_imageHeight*_imageWidth)*j + k])/255);
+        imageBatch(k, j) =  static_cast<float>(_imageData[batchSize*static_cast<unsigned int>(_imageHeight*_imageWidth)*i + static_cast<unsigned int>(_imageHeight*_imageWidth)*j + k])/255;
       }
     }
 

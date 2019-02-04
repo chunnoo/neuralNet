@@ -16,11 +16,9 @@ NeuralNet::NeuralNet(std::vector<unsigned int> layerSizes, std::vector<Activatio
   }
 
   for (unsigned int i = 1; i < _numLayers; i++) {
-    Matrix layerWeight(layerSizes[i], layerSizes[i - 1]);
-    layerWeight.randomFill();
+    Eigen::MatrixXf layerWeight = Eigen::MatrixXf::Random(layerSizes[i], layerSizes[i - 1]);
 
-    Matrix layerBias(layerSizes[i], 1);
-    layerBias.randomFill();
+    Eigen::VectorXf layerBias = Eigen::VectorXf::Random(layerSizes[i]);
 
     _ws.push_back(layerWeight);
     _bs.push_back(layerBias);
@@ -52,11 +50,9 @@ NeuralNet::NeuralNet(std::initializer_list<unsigned int> layerSizes, std::initia
   }
 
   for (unsigned int i = 1; i < _numLayers; i++) {
-    Matrix layerWeight(layerSizesVec[i], layerSizesVec[i - 1]);
-    layerWeight.randomFill();
+    Eigen::MatrixXf layerWeight = Eigen::MatrixXf::Random(layerSizesVec[i], layerSizesVec[i - 1]);
 
-    Matrix layerBias(layerSizesVec[i], 1);
-    layerBias.randomFill();
+    Eigen::VectorXf layerBias = Eigen::VectorXf::Random(layerSizesVec[i]);
 
     _ws.push_back(layerWeight);
     _bs.push_back(layerBias);
@@ -87,62 +83,67 @@ NeuralNet::NeuralNet(std::string filename) {
   }
 
   for (unsigned int i = 1; i < _numLayers; i++) {
-    Matrix m(_layerSizes[i], _layerSizes[i-1]);
-    for (auto &e : m.getDataVector()) {
-      file.read(reinterpret_cast<char *>(&e), sizeof(float));
+    Eigen::MatrixXf m(_layerSizes[i], _layerSizes[i-1]);
+    for (unsigned int j = 0; j < m.rows(); j++) {
+      for (unsigned int k = 0; k < m.cols(); k++) {
+        float e;
+        file.read(reinterpret_cast<char *>(&e), sizeof(float));
+        m(j, k) = e;
+      }
     }
     _ws.push_back(m);
   }
 
   for (unsigned int i = 1; i < _numLayers; i++) {
-    Matrix m(_layerSizes[i], 1);
-    for (auto &e : m.getDataVector()) {
+    Eigen::VectorXf v(_layerSizes[i]);
+    for (unsigned int j = 0; j < v.size(); j++) {
+      float e;
       file.read(reinterpret_cast<char *>(&e), sizeof(float));
+      v(j) = e;
     }
-    _bs.push_back(m);
+    _bs.push_back(v);
   }
 
   file.close();
 }
 
-void NeuralNet::backPropagation(std::vector<Matrix>& inputBatches, std::vector<Matrix>& outputBatches, Loss loss, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint) {
+void NeuralNet::backPropagation(std::vector<Eigen::MatrixXf>& inputBatches, std::vector<Eigen::MatrixXf>& outputBatches, Loss loss, float alpha, float dropoutRate, unsigned int iterations, unsigned int iterModPrint) {
   if (inputBatches.size() != outputBatches.size()) {
     throw std::invalid_argument("inputBatches and outputBatches does not match");
   }
 
   for (unsigned int i = 0; i < iterations; i++) {
-    std::vector<Matrix> layers;
-    Matrix firstLayer = inputBatches[i%inputBatches.size()];
+    std::vector<Eigen::MatrixXf> layers;
+    Eigen::MatrixXf firstLayer = inputBatches[i%inputBatches.size()];
     layers.push_back(firstLayer);
 
     for (unsigned int j = 1; j < _numLayers; j++) {
 
-      Matrix layer = _ws[j-1].gpuMultiply(layers[j-1]).matVecAdd(_bs[j-1]);
+      Eigen::MatrixXf layer = (_ws[j-1] * layers[j-1]).colwise() + _bs[j-1];
 
       if (_activations[j] == RELU) {
-        layer = layer.relu();
+        layer = Operations::relu(layer);
       } else if (_activations[j] == SIGMOID) {
-        layer = layer.sigmoid();
+        layer = Operations::sigmoid(layer);
       } else if (_activations[j] == SOFTMAX) {
-        layer = layer.softmax();
+        layer = Operations::softmax(layer);
       }
 
       if (j != _numLayers - 1 && dropoutRate > 0) {
-        Matrix dropout(layer.getHeight(), layer.getWidth());
-        dropout.randomBinomialFill(dropoutRate);
-        dropout = dropout.multiply(1/(1 - dropoutRate));
-        layer = layer.elementMultiply(dropout);
+        Eigen::MatrixXf dropout = Eigen::MatrixXf::Random(layer.rows(), layer.cols());
+        dropout = dropout.unaryExpr([=](float e){return static_cast<float>((e < dropoutRate*2 - 1 ? 0.0 : 1.0)*(1/(1 - dropoutRate)));});
+        layer = layer.array() * dropout.array();
       }
 
       layers.push_back(layer);
     }
 
     //std::vector<Matrix> errors; //ordered form lastlayer error and backwards
-    std::vector<Matrix> deltas; //also ordered from last and backwards
+    std::vector<Eigen::MatrixXf> deltas; //also ordered from last and backwards
 
     //Matrix lastError;
-    Matrix lastDelta;
-    lastDelta = layers[_numLayers - 1].subtract(outputBatches[i%outputBatches.size()]);
+    Eigen::MatrixXf lastDelta;
+    lastDelta = layers[_numLayers - 1] - (outputBatches[i%outputBatches.size()]);
     /*if (loss == MEANSQUARED) {
       //lastError = layers[_numLayers - 1].meanSquared(outputBatches[i%outputBatches.size()]);
       lastDelta = layers[_numLayers - 1].meanSquaredDeriv(outputBatches[i%outputBatches.size()]);
@@ -168,45 +169,46 @@ void NeuralNet::backPropagation(std::vector<Matrix>& inputBatches, std::vector<M
     deltas.push_back(lastDelta);
 
     for (unsigned int j = _numLayers - 2; j > 0; j--) {
-      Matrix error = _ws[j].transpose().gpuMultiply(deltas[_numLayers - 2 - j]);
+      Eigen::MatrixXf error = _ws[j].transpose() * deltas[_numLayers - 2 - j];
       //errors.push_back(error);
 
-      Matrix delta;
+      Eigen::MatrixXf delta;
       if (_activations[j] == RELU) {
         //delta = errors[_numLayers - 1 - j].elementMultiply(layers[j].reluInvDeriv());
-        delta = error.elementMultiply(layers[j].reluInvDeriv());
+        delta = error.array() * Operations::reluInvDeriv(layers[j]).array();
       } else if (_activations[j] == SIGMOID) {
-        delta = error.elementMultiply(layers[j].sigmoidInvDeriv());
+        delta = error.array() * Operations::sigmoidInvDeriv(layers[j]).array();
       } else if (_activations[j] == SOFTMAX) {
-        delta = error.elementMultiply(layers[j].softmaxInvDeriv());
+        delta = error.array() * Operations::reluInvDeriv(layers[j]).array();
+        //This is not working
       } else {
-        delta = error.elementMultiply(layers[j]);
+        delta = error.array() * layers[j].array();
       }
       deltas.push_back(delta);
     }
 
     for (unsigned int j = 0; j < _numLayers - 1; j++) {
-      _ws[j] = _ws[j].subtract(deltas[_numLayers - 2 - j].gpuMultiply(layers[j].transpose()).multiply(alpha));
-      _bs[j] = _bs[j].subtract(deltas[_numLayers - 2 - j].sumAlongRows().multiply(alpha));
+      _ws[j] = _ws[j] - ((deltas[_numLayers - 2 - j] * layers[j].transpose()) * alpha);
+      _bs[j] = _bs[j] - (deltas[_numLayers - 2 - j].rowwise().sum() * alpha);
     }
 
     if (i % iterModPrint == 0) {
-      std::cout << "Err: " << layers[_numLayers - 1].subtract(outputBatches[i%outputBatches.size()]).absAvg() << std::endl;
+      std::cout << "Err: " << (layers[_numLayers - 1] - outputBatches[i%outputBatches.size()]).unaryExpr([](float e){return std::abs(e);}).mean() << std::endl;
     }
   }
 }
 
-Matrix NeuralNet::use(Matrix& input) {
-  Matrix output = input;
+Eigen::MatrixXf NeuralNet::use(Eigen::MatrixXf& input) {
+  Eigen::MatrixXf output = input;
   for (unsigned int i = 0; i < _numLayers - 1; i++) {
     if (_activations[i + 1] == RELU) {
-      output = _ws[i].multiply(output).matVecAdd(_bs[i]).relu();
+      output = Operations::relu((_ws[i] * output).colwise() + _bs[i]);
     } else if (_activations[i + 1] == SIGMOID) {
-      output = _ws[i].multiply(output).matVecAdd(_bs[i]).sigmoid();
+      output = Operations::sigmoid((_ws[i] * output).colwise() + _bs[i]);
     } else if (_activations[i + 1] == SOFTMAX) {
-      output = _ws[i].multiply(output).matVecAdd(_bs[i]).softmax();
+      output = Operations::softmax((_ws[i] * output).colwise() + _bs[i]);
     } else {
-      output = _ws[i].multiply(output).matVecAdd(_bs[i]);
+      output = ((_ws[i] * output).colwise() + _bs[i]);
     }
   }
   return output;
@@ -242,13 +244,17 @@ void NeuralNet::save(std::string filename) {
   }
 
   for (auto &m : _ws) {
-    for (auto &e : m.getDataVector()) {
-      file.write(reinterpret_cast<char *>(&e), sizeof(float));
+    for (unsigned int i = 0; i < m.rows(); i++) {
+      for (unsigned int j = 0; j < m.cols(); j++) {
+        float e = m(i, j);
+        file.write(reinterpret_cast<char *>(&e), sizeof(float));
+      }
     }
   }
 
-  for (auto &m : _bs) {
-    for (auto &e : m.getDataVector()) {
+  for (auto &v : _bs) {
+    for (unsigned int i = 0; i < v.size(); i++) {
+      float e = v(i);
       file.write(reinterpret_cast<char *>(&e), sizeof(float));
     }
   }
