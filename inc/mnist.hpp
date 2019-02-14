@@ -34,6 +34,8 @@ class Mnist {
     std::vector<Eigen::MatrixXf> getLabelBatches(unsigned int batchSize, unsigned int numBatches);
     std::vector<Eigen::MatrixXf> getImageBatches(unsigned int batchSize, unsigned int numBatches);
 
+    std::vector<unsigned int> getSortedSampleIndices(unsigned int numSamples);
+
 };
 
 #endif

@@ -7,3 +7,10 @@ First use of neural network using two hidden layers of size four and using ReLU 
 ![alttext](images/classifying2dPointsTraining.png "training") ![alttext](images/classifying2dPointsTest.png "test")
 
 *Training data and test data*
+
+### Classifying minst database
+First successful attempt at classifying the minst database. Hidden layer sizes of 256, 128 and 128. Sigmoid activation in hidden layers and softmax activation in output layer. Crossentropy loss function. The network was first run for a while without dropout and then with a dropout of 0.05. All training was done with a step size of 0.005.
+
+![alttext](images/firstSuccessfulMnistInputSample.png "input") ![alttext](images/firstSuccessfulMnistOutputPredictionAndExpectationSample.png "putput")
+
+*Input, output prediction and output expectation*

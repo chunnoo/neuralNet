@@ -137,3 +137,19 @@ std::vector<Eigen::MatrixXf> Mnist::getImageBatches(unsigned int batchSize, unsi
 
   return matrices;
 }
+
+std::vector<unsigned int> Mnist::getSortedSampleIndices(unsigned int numSamples) {
+  std::vector<unsigned int> sampleIndices;
+
+  for (char i = 0; i < 10; i++) {
+    unsigned int j = 0;
+    while (sampleIndices.size() < (i+1)*numSamples) {
+      if (_labelData[j] == i) {
+        sampleIndices.push_back(j);
+      }
+      j++;
+    }
+  }
+
+  return sampleIndices;
+}

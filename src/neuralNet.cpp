@@ -129,7 +129,7 @@ void NeuralNet::backPropagation(std::vector<Eigen::MatrixXf>& inputBatches, std:
         layer = Operations::softmax(layer);
       }
 
-      if (j != _numLayers - 1 && dropoutRate > 0) {
+      if (j < _numLayers - 1 && dropoutRate > 0) {
         Eigen::MatrixXf dropout = Eigen::MatrixXf::Random(layer.rows(), layer.cols());
         dropout = dropout.unaryExpr([=](float e){return static_cast<float>((e < dropoutRate*2 - 1 ? 0.0 : 1.0)*(1/(1 - dropoutRate)));});
         layer = layer.array() * dropout.array();
